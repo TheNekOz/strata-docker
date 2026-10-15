@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<CommunityApplications>
+  <Profile>
+An Unraid template and container image for [Strata](https://github.com/Niko1221/Strata), which runs the Qwen3.8-Flash-Next model on one NVIDIA GPU plus system RAM with an OpenAI- and Anthropic-compatible API.
+
+The image is built from Strata's own Dockerfile, patched so it runs on any AVX2 CPU, and published to GHCR by this repository's CI. It is unofficial: report template or image problems in this repository's issues, not to the Strata project.
+  </Profile>
+  <Icon>https://raw.githubusercontent.com/williamkunz/strata-docker/main/icon.svg</Icon>
+  <WebPage>https://github.com/williamkunz/strata-docker</WebPage>
+</CommunityApplications>

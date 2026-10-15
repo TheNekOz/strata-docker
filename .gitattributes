@@ -1,0 +1,3 @@
+# build.sh runs in bash and the patch applies to LF files: both stay LF on Windows checkouts
+*.sh text eol=lf
+*.patch text eol=lf
