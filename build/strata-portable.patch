@@ -1,40 +1,20 @@
 diff --git a/Dockerfile b/Dockerfile
-index f1f002e..89bfac4 100644
+index 6430601..72a2146 100644
 --- a/Dockerfile
 +++ b/Dockerfile
-@@ -65,10 +65,13 @@ RUN python3 -m venv .venv \
-     && chmod +x setup.sh docker-entrypoint.sh
- 
- # llama.cpp at the pinned commit, then the engine and the image encoder, built
--# exactly the way setup.py builds them: native code for the CPU that builds the
--# image, so build it on the PC it runs on. BUILD.json is what setup.py reads to
--# decide whether an engine is current: source=local with a matching src hash
--# means the first start reuses it instead of recompiling.
-+# the way setup.py builds them. PORTABLE=ON (patched; upstream builds native):
-+# an AVX2 baseline like the ready-made release engine, so an image built on one
-+# PC runs on any AVX2 CPU instead of only on the CPU that built it. PORTABLE=OFF
-+# gets native code back - then build it on the PC it runs on. BUILD.json is what
-+# setup.py reads to decide whether an engine is current: source=local with a
-+# matching src hash means the first start reuses it instead of recompiling.
-+ARG PORTABLE=ON
- RUN .venv/bin/python - <<'PYEOF'
+@@ -73,6 +73,15 @@ RUN .venv/bin/python - <<'PYEOF'
  import json, os, pathlib, shutil
  import setup
-@@ -77,14 +80,15 @@ llama = setup.get_llama_cpp()
+ 
++# strata-docker: build for any AVX2 CPU (STRATA_PORTABLE=ON, the release engine's baseline) instead of
++# native code for the CPU that runs docker build, so a published image runs on other machines. Every
++# cmake_build gets it, replacing any STRATA_PORTABLE the call passes itself.
++_cmake_build = setup.cmake_build
++def _portable_cmake_build(src, bdir, target, defs, *rest, **kw):
++    defs = [d for d in defs if not d.startswith("-DSTRATA_PORTABLE=")] + ["-DSTRATA_PORTABLE=ON"]
++    return _cmake_build(src, bdir, target, defs, *rest, **kw)
++setup.cmake_build = _portable_cmake_build
++
+ llama = setup.get_llama_cpp()
  nvcc, _ = setup.find_nvcc()
  arch = os.environ.get("CUDA_ARCHITECTURES", "75;80;86;89;120").strip().strip('"').replace(",", ";")
- vision = "gpu" if os.environ.get("BUILD_VISION", "1") == "1" else "none"
-+portable = "OFF" if os.environ.get("PORTABLE", "ON").upper() == "OFF" else "ON"
- 
- setup.cmake_build(setup.ROOT, setup.ROOT / "build", "strata",
--    ["-DSTRATA_ENABLE_CUDA=ON", "-DSTRATA_BUILD_TESTS=OFF",
-+    ["-DSTRATA_ENABLE_CUDA=ON", "-DSTRATA_BUILD_TESTS=OFF", f"-DSTRATA_PORTABLE={portable}",
-      f"-DCMAKE_CUDA_ARCHITECTURES={arch}", f"-DCMAKE_CUDA_COMPILER={nvcc}",
-      f"-DSTRATA_GGML_DIR={llama}"], None, "build-strata.bat")
- if vision != "none":
-     setup.cmake_build(setup.ROOT / "tools" / "vision", setup.ROOT / "build-vision", "strata-vision",
--        [f"-DLLAMA_DIR={llama}", "-DSTRATA_VISION_CUDA=ON", "-DSTRATA_PORTABLE=OFF",
-+        [f"-DLLAMA_DIR={llama}", "-DSTRATA_VISION_CUDA=ON", f"-DSTRATA_PORTABLE={portable}",
-          f"-DCMAKE_CUDA_ARCHITECTURES={arch}", f"-DCMAKE_CUDA_COMPILER={nvcc}"], None, "build-vision.bat")
- 
- eng = setup.ROOT / "engine"
