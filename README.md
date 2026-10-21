@@ -16,11 +16,13 @@ Search for **Strata** in the Apps tab. Before installing you need:
 
 The first start downloads the model and sets it up, which can take a few hours. Later starts go straight to serving. The template's Overview explains each setting.
 
-The server has **no API key by default**: anyone who can reach the port can use the model. Keep it on your LAN, or set the API key.
+An **API key is always on**. Set your own in the template, or leave it empty and the first start makes one and keeps it in the Data folder; show it with `docker exec Strata strata launch --show-key --preset docker`. Keep the port on your LAN either way.
+
+Upgrading from a 0.1.x image keeps the model: the first start moves the old files into `Data/Strata-data` instead of downloading them again. The old `Reinstall` and `Low-RAM mode` settings no longer exist; edit any setting and apply, and it takes effect on the next start.
 
 ## Updating to a new Strata release
 
-Change the tag in `build/STRATA_VERSION` and merge it to `main`. If the patch no longer applies, upstream changed its build step: redo the edit in the new Dockerfile and regenerate the patch with `git diff`.
+Change the tag in `build/STRATA_VERSION` and merge it to `main`. CI builds Strata's own source `Dockerfile` at that tag, unchanged, and pushes `:<tag>` and `:latest`. If a release renames or drops environment variables (see `docker/entrypoint.sh` upstream), update `templates/strata.xml` to match.
 
 ## Credits and licence
 
